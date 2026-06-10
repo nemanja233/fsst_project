@@ -63,12 +63,6 @@ def guest_access():
     guest_button.hide()
 
 
-def play_menu():            # Play or quit menu nach dem login oder guest access
-    pass
-
-
-
-
 def connect_db():
     global connection
     try:
@@ -97,7 +91,7 @@ def create_user_db():
         cursor.execute(query, new_user_credentials())           # Einfachste lösung den tupel weiter zu bekommen über den button ging es nicht es war buggy
         connection.commit()
         print("User created successfully")
-        state = "logged"
+        state = "created"
     else:
         print("Not connected to database")
 
@@ -125,10 +119,21 @@ clock=pygame.time.Clock()
 width=screen.get_width()
 height=screen.get_height()
 
-
-
-
-
+def play_menu():            # Play or quit menu nach dem login oder guest access
+    global play_button, quit_button, state
+    if state == "logged":
+        new_login_button.hide()
+        textinput.hide()
+        pwd_input.hide()
+    elif state == "created":
+        create_user_button.hide()
+        newuser.hide()
+        newpwd.hide()
+    else:
+        print("No valid state for play_menu")
+    state = "play_menu"
+    play_button = Button(screen, width//2 - 75, height//2 - 25, 150, 50, text="Play", fontSize=30, onClick=game)
+    quit_button = Button(screen, width//2 - 75, height//2 + 50, 150, 50, text="Quit", fontSize=30, onClick=sys  .exit)
 
 
 def start_menu():
@@ -140,7 +145,12 @@ def start_menu():
             if event.type == pygame.QUIT:
                 running = False
                 close_db()
-
+            if state=="logged" or state=="created":
+                play_menu()
+            if state=="guest_access":
+                play_menu()
+            if state=="play_menu":
+                pass
         screen.fill("blue")
         pygame_widgets.update(events)
 
@@ -149,7 +159,9 @@ def start_menu():
 
 
 def game():
+    global state
     running = True
+    state = "game"
     while running:
         events = pygame.event.get()
 
@@ -158,12 +170,23 @@ def game():
                 running = False
                 close_db()
 
+        play_button.hide()      #Hide buttons when game starts
+        quit_button.hide()      #------------||---------------
+
+
+        
+
         screen.fill("green")
         pygame_widgets.update(events)
         pygame.display.flip()
         clock.tick(60) / 1000
 
 
-connect_db()
-main_menu()
-start_menu()
+def main():
+    connect_db()
+    main_menu()
+    start_menu()
+    play_menu()
+
+if __name__ == "__main__":
+    main()
