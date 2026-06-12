@@ -6,6 +6,8 @@ import pygame_widgets
 from pygame_widgets.button import Button 
 from pygame_widgets.textbox import TextBox
 from getpass import getpass
+import game
+
 
 state = "main_menu"
 
@@ -27,9 +29,9 @@ def new_user_credentials():
 def main_menu():
     global login_button, new_user_button, guest_button, quit_button, state
     state = "main_menu"
-    login_button = Button(screen, 100,100,150,50, text="Login", fontSize=30, onClick=show_login_screen)
-    new_user_button = Button(screen, 300,100,150,50, text="New User", fontSize=30, onClick=create_user)
-    guest_button = Button(screen, 500,100,150,50, text="Guest", fontSize=30, onClick=guest_access)
+    login_button = Button(screen, width//2-75,100,150,50, text="Login", fontSize=30, onClick=show_login_screen)
+    new_user_button = Button(screen, width//2-75,200,150,50, text="New User", fontSize=30, onClick=create_user)
+    guest_button = Button(screen, width//2-75,300,150,50, text="Guest", fontSize=30, onClick=guest_access)
     quit_button = Button(screen, 0,height - 50,150,50, text="Quit", fontSize=30, onClick=sys.exit)
 
 def show_login_screen():
@@ -108,16 +110,7 @@ def login_db():
             state = "logged"
         else:
             print("Invalid credentials")
-        close_db()  
-        
-            
-pygame.init()
-res=(720,360)
-screen = pygame.display.set_mode(res)
-clock=pygame.time.Clock()
-
-width=screen.get_width()
-height=screen.get_height()
+         
 
 def play_menu():            # Play or quit menu nach dem login oder guest access
     global play_button, quit_button, state
@@ -132,11 +125,11 @@ def play_menu():            # Play or quit menu nach dem login oder guest access
     else:
         print("No valid state for play_menu")
     state = "play_menu"
-    play_button = Button(screen, width//2 - 75, height//2 - 25, 150, 50, text="Play", fontSize=30, onClick=game)
+    play_button = Button(screen, width//2 - 75, height//2 - 25, 150, 50, text="Play", fontSize=30, onClick=run_game)
     quit_button = Button(screen, width//2 - 75, height//2 + 50, 150, 50, text="Quit", fontSize=30, onClick=sys  .exit)
 
 
-def start_menu():
+def starting():
     running = True
     while running:
         events = pygame.event.get()
@@ -145,20 +138,21 @@ def start_menu():
             if event.type == pygame.QUIT:
                 running = False
                 close_db()
+                sys.exit()
+                
             if state=="logged" or state=="created":
                 play_menu()
             if state=="guest_access":
                 play_menu()
             if state=="play_menu":
                 pass
-        screen.fill("blue")
+        screen.blit(game.backgorund,(0,0))
         pygame_widgets.update(events)
-
         pygame.display.flip()
         clock.tick(60) / 1000
 
 
-def game():
+def run_game():
     global state
     running = True
     state = "game"
@@ -169,24 +163,35 @@ def game():
             if event.type == pygame.QUIT:
                 running = False
                 close_db()
+                sys.exit()
+
+            if event.type == game.timer_pipes:
+                game.create_pipes()       
 
         play_button.hide()      #Hide buttons when game starts
         quit_button.hide()      #------------||---------------
 
-
-        
-
-        screen.fill("green")
+        game.move()
+        game.draw()
         pygame_widgets.update(events)
         pygame.display.flip()
-        clock.tick(60) / 1000
+        clock.tick(60) 
 
 
 def main():
     connect_db()
     main_menu()
-    start_menu()
-    play_menu()
+    starting()
+
+
+pygame.init()
+res=(360,640)
+screen = pygame.display.set_mode(res)
+clock=pygame.time.Clock()
+pygame.display.set_caption("Flappy Bird")
+width=screen.get_width()
+height=screen.get_height()
+
 
 if __name__ == "__main__":
     main()
