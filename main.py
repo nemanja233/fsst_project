@@ -165,17 +165,36 @@ def run_game():
                 close_db()
                 sys.exit()
 
-            if event.type == game.timer_pipes:
+            if event.type == game.timer_pipes and not game.game_over:
                 game.create_pipes()       
+
+
+            if event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_SPACE, pygame.K_UP):
+                    game.velocity_y = -6  
+
+                    if game.game_over:
+                        game.bird.y = game.bird_y
+                        game.pipes.clear()
+                        game.score = 0
+                        game.game_over = False
+
 
         play_button.hide()      #Hide buttons when game starts
         quit_button.hide()      #------------||---------------
 
-        game.move()
-        game.draw()
-        pygame_widgets.update(events)
-        pygame.display.flip()
-        clock.tick(60) 
+
+        if not game.game_over:
+            game.move()
+            game.draw()
+            print(game.score)
+            pygame_widgets.update(events)
+            pygame.display.flip()
+            clock.tick(60) 
+
+def upload_data():
+    pass    #TODO Upload the score to the database and save it to the user!
+
 
 
 def main():
