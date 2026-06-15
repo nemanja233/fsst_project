@@ -11,6 +11,7 @@ import game
 
 state = "main_menu"
 
+
 def get_credentials():
     global params
     username = textinput.getText()
@@ -86,7 +87,7 @@ def close_db():
 
 
 def create_user_db():
-    global state
+    global state, logged_user
     if connection.is_connected():
         cursor = connection.cursor()
         query = "INSERT INTO players (username, password) VALUES (%s, %s)"
@@ -94,12 +95,13 @@ def create_user_db():
         connection.commit()
         print("User created successfully")
         state = "created"
+        logged_user = new_user_credentials()[0]
     else:
         print("Not connected to database")
 
 
 def login_db():
-    global state
+    global state, logged_user
     if connection.is_connected():
         cursor = connection.cursor()
         query = "SELECT * FROM players WHERE username=%s AND password=%s"
@@ -108,6 +110,8 @@ def login_db():
         if result:
             print(f"Login successful, welcome {result[1]}")
             state = "logged"
+            logged_user = result[1]
+            print(logged_user)
         else:
             print("Invalid credentials")
          
@@ -124,7 +128,6 @@ def play_menu():            # Play or quit menu nach dem login oder guest access
         newpwd.hide()
     else:
         print("No valid state for play_menu")
-    state = "play_menu"
     play_button = Button(screen, width//2 - 75, height//2 - 25, 150, 50, text="Play", fontSize=30, onClick=run_game)
     quit_button = Button(screen, width//2 - 75, height//2 + 50, 150, 50, text="Quit", fontSize=30, onClick=sys  .exit)
 
@@ -144,8 +147,6 @@ def starting():
                 play_menu()
             if state=="guest_access":
                 play_menu()
-            if state=="play_menu":
-                pass
         screen.blit(game.backgorund,(0,0))
         pygame_widgets.update(events)
         pygame.display.flip()
@@ -155,7 +156,6 @@ def starting():
 def run_game():
     global state
     running = True
-    state = "game"
     while running:
         events = pygame.event.get()
 
@@ -168,6 +168,7 @@ def run_game():
             if event.type == game.timer_pipes and not game.game_over:
                 game.create_pipes()       
 
+            
 
             if event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_SPACE, pygame.K_UP):
@@ -178,7 +179,7 @@ def run_game():
                         game.pipes.clear()
                         game.score = 0
                         game.game_over = False
-
+                        
 
         play_button.hide()      #Hide buttons when game starts
         quit_button.hide()      #------------||---------------
@@ -187,13 +188,28 @@ def run_game():
         if not game.game_over:
             game.move()
             game.draw()
-            print(game.score)
+            upload_data()
             pygame_widgets.update(events)
             pygame.display.flip()
             clock.tick(60) 
 
+
+
 def upload_data():
-    pass    #TODO Upload the score to the database and save it to the user!
+    global state, logged_user
+    if game.game_over:
+        highscore = int(game.score)
+        print(f"Here is the highscore: {highscore}")
+        if state == "logged" or state=="created":
+            if connection.is_connected():    
+                cursor=connection.cursor()
+                cursor.execute("SELECT highscore FROM players WHERE username = %s", (logged_user,))
+                record = cursor.fetchone()
+                if record[0] < highscore:
+                    query = "UPDATE players SET highscore = %s WHERE username = %s"
+                    cursor.execute(query, (highscore,logged_user))
+                    connection.commit()
+                    print("executed")
 
 
 
@@ -201,6 +217,7 @@ def main():
     connect_db()
     main_menu()
     starting()
+    
 
 
 pygame.init()
